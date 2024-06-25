@@ -24,14 +24,17 @@ function Invoke-CIPPStandardAntiPhishPolicy {
                       ($CurrentState.EnableUnauthenticatedSender -eq $true) -and
                       ($CurrentState.EnableViaTag -eq $true) -and
                       ($CurrentState.MailboxIntelligenceProtectionAction -eq $Settings.MailboxIntelligenceProtectionAction) -and
-                      ($CurrentState.MailboxIntelligenceQuarantineTag -eq $Settings.MailboxIntelligenceQuarantineTag)
+                      ($CurrentState.MailboxIntelligenceQuarantineTag -eq $Settings.MailboxIntelligenceQuarantineTag) -and
+                      ($CurrentState.TargetedUserProtectionAction -eq $Settings.TargetedUserProtectionAction) -and
+                      ($CurrentState.TargetedDomainProtectionAction -eq $Settings.TargetedDomainProtectionAction) -and
+                      ($CurrentState.EnableOrganizationDomainsProtection -eq $true)
 
     $AcceptedDomains = New-ExoRequest -tenantid $Tenant -cmdlet 'Get-AcceptedDomain'
 
     $RuleState = New-ExoRequest -tenantid $Tenant -cmdlet 'Get-AntiPhishRule' |
         Where-Object -Property Name -EQ "CIPP $PolicyName" |
         Select-Object Name, AntiPhishPolicy, Priority, RecipientDomainIs
-    
+
     $RuleStateIsCorrect = ($RuleState.Name -eq "CIPP $PolicyName") -and
                           ($RuleState.AntiPhishPolicy -eq $PolicyName) -and
                           ($RuleState.Priority -eq 0) -and
@@ -55,6 +58,9 @@ function Invoke-CIPPStandardAntiPhishPolicy {
                 EnableViaTag                        = $true
                 MailboxIntelligenceProtectionAction = $Settings.MailboxIntelligenceProtectionAction
                 MailboxIntelligenceQuarantineTag    = $Settings.MailboxIntelligenceQuarantineTag
+                TargetedUserProtectionAction        = $Settings.TargetedUserProtectionAction
+                TargetedDomainProtectionAction      = $Settings.TargetedDomainProtectionAction
+                EnableOrganizationDomainsProtection = $true
             }
 
             try {
@@ -75,9 +81,9 @@ function Invoke-CIPPStandardAntiPhishPolicy {
 
         if ($RuleStateIsCorrect -eq $false) {
             $cmdparams = @{
-                AntiPhishPolicy     = $PolicyName
-                Priority            = 0
-                RecipientDomainIs   = $AcceptedDomains.Name
+                AntiPhishPolicy   = $PolicyName
+                Priority          = 0
+                RecipientDomainIs = $AcceptedDomains.Name
             }
 
             try {
